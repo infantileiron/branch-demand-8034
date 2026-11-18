@@ -8,7 +8,7 @@ from src.middlewares.auth import current,editor,admin
 from src.utils.security import verify,token
 from src.services.business import audit,dump
 from src.services.volumes import save_volume
-from src.services.staffing import draft
+from src.services.staffing import draft,approve as approve_staffing
 from src.controllers.business import ensure_run
 router=APIRouter()
 @router.post('/auth/login')
@@ -51,7 +51,6 @@ def staffing(data:StaffingInput,u=Depends(editor),s=Depends(db)):
 def approve(i:int,u=Depends(admin),s=Depends(db)):
  r=s.get(Staffing,i)
  if not r:raise HTTPException(404,'排班建议不存在')
- if r.status!='draft':raise HTTPException(409,'不可重复签核')
- r.status='approved';s.commit();audit(s,u,'签核排班 '+str(i));return dump(r)
+ approve_staffing(r);s.commit();audit(s,u,'签核排班 '+str(i));return dump(r)
 @router.get('/audits')
 def audits(u=Depends(admin),s=Depends(db)):return [dump(r) for r in s.query(Audit).order_by(Audit.id.desc()).limit(100)]
